@@ -49,33 +49,26 @@ campus-lost-found/
 
 ## 🚀 How to Run the Project
 
-### 1. Project Directory
-The project is located at:
-```bash
-/Users/ananyaravikumar/.gemini/antigravity-ide/scratch/campus-lost-found
-```
 
-### 2. Prerequisites
+### 1. Prerequisites
 - **Node.js** (v18+)
 - **MongoDB** running locally on default port `27017`
 
-### 3. Open in Terminal
-```bash
-cd /Users/ananyaravikumar/.gemini/antigravity-ide/scratch/campus-lost-found
-```
+### 2. Open in Terminal
 
-### 4. Install Dependencies
+
+### 3. Install Dependencies
 ```bash
 npm install
 ```
 
-### 5. Seed Database (Optional but Recommended)
+### 4. Seed Database 
 Populates realistic campus profiles and sample lost/found reports:
 ```bash
 npm run seed
 ```
 
-### 6. Start the Server
+### 5. Start the Server
 ```bash
 # Production mode:
 npm start
@@ -87,7 +80,7 @@ npm run dev
 The system will start at:
 👉 **[http://localhost:3001](http://localhost:3001)**
 
-### 7. Run Automated Tests
+### 6. Run Automated Tests
 Execute the 18 comprehensive test cases covering routes, validations, relationships, and edge cases:
 ```bash
 npm test
