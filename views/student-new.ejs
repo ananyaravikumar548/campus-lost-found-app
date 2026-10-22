@@ -1,0 +1,89 @@
+<%- include('partials/header') %>
+
+<div style="margin-bottom: 1.5rem;">
+  <a href="/students" class="btn btn-secondary btn-sm">&larr; Back to Student Directory</a>
+</div>
+
+<div class="form-card">
+  <div style="text-align: center; margin-bottom: 2rem;">
+    <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">👤</div>
+    <h1 style="font-size: 1.85rem; font-weight: 800; letter-spacing: -0.02em;">Register Student Profile</h1>
+    <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.35rem;">
+      Create a campus student record to report lost or found items and verify claims.
+    </p>
+  </div>
+
+  <form action="/students" method="POST" novalidate>
+    <div class="form-group">
+      <label class="form-label" for="fullName">
+        Full Name <span class="required">*</span>
+      </label>
+      <input
+        type="text"
+        id="fullName"
+        name="fullName"
+        class="form-control"
+        placeholder="e.g., Ananya Sharma"
+        required
+        minlength="2"
+        maxlength="100"
+        value="<%= formData.fullName || '' %>"
+      >
+      <span class="form-hint">Enter your official college name.</span>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="email">
+        College Email Address <span class="required">*</span>
+      </label>
+      <input
+        type="email"
+        id="email"
+        name="email"
+        class="form-control"
+        placeholder="e.g., ananya.sharma@campus.edu"
+        required
+        value="<%= formData.email || '' %>"
+      >
+      <span class="form-hint">Must be a valid, unique campus email address.</span>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="department">
+        Department / Branch <span class="required">*</span>
+      </label>
+      <input
+        type="text"
+        id="department"
+        name="department"
+        class="form-control"
+        placeholder="e.g., Computer Science & Engineering"
+        required
+        value="<%= formData.department || '' %>"
+      >
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="contactNumber">
+        Contact Number <span class="required">*</span>
+      </label>
+      <input
+        type="tel"
+        id="contactNumber"
+        name="contactNumber"
+        class="form-control"
+        placeholder="e.g., +91 9876543210"
+        required
+        value="<%= formData.contactNumber || '' %>"
+      >
+      <span class="form-hint">Students or finder will reach out to this number to coordinate return.</span>
+    </div>
+
+    <div class="form-actions">
+      <a href="/students" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary btn-lg">Create Student Profile</button>
+    </div>
+  </form>
+</div>
+
+<%- include('partials/footer') %>

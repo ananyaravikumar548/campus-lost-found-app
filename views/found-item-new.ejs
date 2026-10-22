@@ -1,0 +1,125 @@
+<%- include('partials/header') %>
+
+<div style="margin-bottom: 1.5rem;">
+  <a href="/found-items" class="btn btn-secondary btn-sm">&larr; Back to Found Items</a>
+</div>
+
+<div class="form-card">
+  <div style="text-align: center; margin-bottom: 2rem;">
+    <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">📦</div>
+    <h1 style="font-size: 1.85rem; font-weight: 800; letter-spacing: -0.02em;">Report a Found Item</h1>
+    <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.35rem;">
+      Thank you for helping keep campus honest! Register the belonging you discovered so its owner can find it.
+    </p>
+  </div>
+
+  <% if (students.length === 0) { %>
+    <div class="alert alert-warning" style="display: block;">
+      <strong>No registered students found!</strong><br>
+      You must create a student profile first before reporting a found item, so the item can be linked to you.
+      <div style="margin-top: 1rem;">
+        <a href="/students/new" class="btn btn-primary btn-sm">Register Student Profile &rarr;</a>
+      </div>
+    </div>
+  <% } else { %>
+    <form action="/found-items" method="POST" novalidate>
+      <div class="form-group">
+        <label class="form-label" for="reportedBy">
+          Finder Student Profile <span class="required">*</span>
+        </label>
+        <select name="reportedBy" id="reportedBy" class="form-control" required>
+          <option value="">-- Select Your Student Profile --</option>
+          <% students.forEach(student => { %>
+            <option value="<%= student._id %>" <%= (selectedStudentId && selectedStudentId.toString() === student._id.toString()) ? 'selected' : '' %>>
+              <%= student.fullName %> (<%= student.department %> • <%= student.email %>)
+            </option>
+          <% }) %>
+        </select>
+        <span class="form-hint">
+          Not in this list? <a href="/students/new">Register your student profile first</a>.
+        </span>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="itemName">
+          Item Name <span class="required">*</span>
+        </label>
+        <input
+          type="text"
+          id="itemName"
+          name="itemName"
+          class="form-control"
+          placeholder="e.g., Wireless Earbuds (White Case)"
+          required
+          minlength="2"
+          maxlength="120"
+          value="<%= formData.itemName || '' %>"
+        >
+        <span class="form-hint">Name the item clearly so the owner can recognize it.</span>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="category">
+          Category <span class="required">*</span>
+        </label>
+        <select name="category" id="category" class="form-control" required>
+          <option value="">-- Choose Category --</option>
+          <% categories.forEach(cat => { %>
+            <option value="<%= cat %>" <%= formData.category === cat ? 'selected' : '' %>><%= cat %></option>
+          <% }) %>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="foundLocation">
+          Location Found <span class="required">*</span>
+        </label>
+        <input
+          type="text"
+          id="foundLocation"
+          name="foundLocation"
+          class="form-control"
+          placeholder="e.g., Main Cafeteria, Table near window"
+          required
+          value="<%= formData.foundLocation || '' %>"
+        >
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="dateFound">
+          Date Found <span class="required">*</span>
+        </label>
+        <input
+          type="date"
+          id="dateFound"
+          name="dateFound"
+          class="form-control"
+          required
+          value="<%= formData.dateFound || new Date().toISOString().split('T')[0] %>"
+        >
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="description">
+          Detailed Description <span class="required">*</span>
+        </label>
+        <textarea
+          id="description"
+          name="description"
+          class="form-control"
+          placeholder="Describe color, condition, stickers or pouch, but omit one or two secret details to test true ownership when someone claims it..."
+          required
+          minlength="5"
+        ><%= formData.description || '' %></textarea>
+        <span class="form-hint">Tip: Keep at least one identifying nuance private to verify genuine ownership claims.</span>
+      </div>
+
+      <div class="form-actions">
+        <a href="/found-items" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-success btn-lg">Publish Found Item Report</button>
+      </div>
+    </form>
+  <% } %>
+</div>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,28 @@
+{
+  "name": "campus-lost-found",
+  "version": "1.0.0",
+  "description": "Campus Lost & Found Management System - Phase 1 Foundation & Core Functionality",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "seed": "node seed.js",
+    "test": "node test_phase1.js"
+  },
+  "keywords": [
+    "express",
+    "mongoose",
+    "mongodb",
+    "ejs",
+    "lost-and-found"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "ejs": "^3.1.10",
+    "express": "^4.21.2",
+    "method-override": "^3.0.0",
+    "mongoose": "^8.9.5"
+  }
+}

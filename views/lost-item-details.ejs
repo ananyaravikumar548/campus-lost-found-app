@@ -1,0 +1,111 @@
+<%- include('partials/header') %>
+
+<div style="margin-bottom: 1.5rem;">
+  <a href="/lost-items" class="btn btn-secondary btn-sm">&larr; Back to Lost Items</a>
+</div>
+
+<div class="detail-layout">
+  <div class="detail-main">
+    <div class="detail-header-card">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap;">
+        <div>
+          <span class="item-category-tag"><%= item.category %></span>
+          <h1 style="font-size: 2rem; font-weight: 800; margin: 0.5rem 0 0.25rem;"><%= item.itemName %></h1>
+          <p style="color: var(--text-faint); font-size: 0.85rem;">
+            Reported on <%= new Date(item.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) %>
+          </p>
+        </div>
+        <span class="badge <%= item.status === 'Open' ? 'badge-open' : (item.status === 'Recovered' ? 'badge-recovered' : 'badge-closed') %>" style="font-size: 0.95rem; padding: 0.45rem 1rem;">
+          <%= item.status %>
+        </span>
+      </div>
+
+      <div class="detail-info-grid">
+        <div class="info-item">
+          <span class="info-item-label">Last Seen Location</span>
+          <span class="info-item-value" style="color: #60a5fa;">📍 <%= item.lastSeenLocation %></span>
+        </div>
+        <div class="info-item">
+          <span class="info-item-label">Date Lost</span>
+          <span class="info-item-value">📅 <%= new Date(item.dateLost).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) %></span>
+        </div>
+        <div class="info-item">
+          <span class="info-item-label">Report ID</span>
+          <span class="code-badge"><%= item._id %></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.75rem;">Description & Distinct Features</h3>
+      <p style="color: var(--text-muted); line-height: 1.7; white-space: pre-line;"><%= item.description %></p>
+    </div>
+
+    <!-- Status Management -->
+    <div class="card" style="border-color: var(--border-subtle);">
+      <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem;">Update Report Status</h3>
+      <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.25rem;">
+        Change the status when the item is found or recovered by the student.
+      </p>
+
+      <form action="/lost-items/<%= item._id %>/status?_method=PATCH" method="POST" style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+        <select name="status" class="form-control" style="max-width: 200px;">
+          <option value="Open" <%= item.status === 'Open' ? 'selected' : '' %>>Open</option>
+          <option value="Recovered" <%= item.status === 'Recovered' ? 'selected' : '' %>>Recovered</option>
+          <option value="Closed" <%= item.status === 'Closed' ? 'selected' : '' %>>Closed</option>
+        </select>
+        <button type="submit" class="btn btn-secondary">Update Status</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Sidebar: Reporter Profile -->
+  <div class="detail-sidebar">
+    <div class="card">
+      <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+        <span>👤</span> Reported By
+      </h3>
+
+      <% if (item.reportedBy) { %>
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem;">
+          <div class="student-avatar">
+            <%= item.reportedBy.fullName.charAt(0).toUpperCase() %>
+          </div>
+          <div>
+            <div style="font-weight: 700; font-size: 1.05rem;"><%= item.reportedBy.fullName %></div>
+            <div style="font-size: 0.85rem; color: var(--text-muted);"><%= item.reportedBy.department %></div>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.875rem; padding-top: 1rem; border-top: 1px solid var(--border-subtle);">
+          <div>
+            <span style="color: var(--text-faint); display: block; font-size: 0.75rem; text-transform: uppercase;">Email</span>
+            <a href="mailto:<%= item.reportedBy.email %>" style="color: var(--text-main);"><%= item.reportedBy.email %></a>
+          </div>
+
+          <div>
+            <span style="color: var(--text-faint); display: block; font-size: 0.75rem; text-transform: uppercase;">Contact Number</span>
+            <a href="tel:<%= item.reportedBy.contactNumber %>" style="color: var(--text-main);"><%= item.reportedBy.contactNumber %></a>
+          </div>
+
+          <div>
+            <span style="color: var(--text-faint); display: block; font-size: 0.75rem; text-transform: uppercase;">Student Database ID</span>
+            <span class="code-badge" style="word-break: break-all;"><%= item.reportedBy._id %></span>
+          </div>
+        </div>
+
+        <div style="margin-top: 1.5rem;">
+          <a href="/students/<%= item.reportedBy._id %>" class="btn btn-secondary btn-sm" style="width: 100%;">
+            View Full Student Profile &rarr;
+          </a>
+        </div>
+      <% } else { %>
+        <div style="color: var(--text-faint); font-size: 0.9rem;">
+          The reporting student profile could not be located in the database.
+        </div>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

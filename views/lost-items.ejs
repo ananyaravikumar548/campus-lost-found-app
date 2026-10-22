@@ -1,0 +1,132 @@
+<%- include('partials/header') %>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Lost Items</h1>
+    <p class="page-subtitle">Track and identify belongings reported lost across campus buildings and grounds</p>
+  </div>
+  <a href="/lost-items/new" class="btn btn-primary">
+    <span>+</span> Report Lost Item
+  </a>
+</div>
+
+<!-- Search & Filter Bar -->
+<form action="/lost-items" method="GET" class="filter-bar">
+  <div class="search-input-wrapper">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="11" cy="11" r="8"></circle>
+      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+    </svg>
+    <input
+      type="text"
+      name="search"
+      class="form-control"
+      placeholder="Search by item name, description, or location..."
+      value="<%= filters.search || '' %>"
+    >
+  </div>
+
+  <div style="min-width: 170px;">
+    <select name="category" class="form-control" onchange="this.form.submit()">
+      <option value="">All Categories</option>
+      <% categories.forEach(cat => { %>
+        <option value="<%= cat %>" <%= filters.category === cat ? 'selected' : '' %>><%= cat %></option>
+      <% }) %>
+    </select>
+  </div>
+
+  <div style="min-width: 140px;">
+    <select name="status" class="form-control" onchange="this.form.submit()">
+      <option value="">All Statuses</option>
+      <option value="Open" <%= filters.status === 'Open' ? 'selected' : '' %>>Open</option>
+      <option value="Recovered" <%= filters.status === 'Recovered' ? 'selected' : '' %>>Recovered</option>
+      <option value="Closed" <%= filters.status === 'Closed' ? 'selected' : '' %>>Closed</option>
+    </select>
+  </div>
+
+  <button type="submit" class="btn btn-secondary">Filter</button>
+  <% if (filters.search || filters.category || filters.status) { %>
+    <a href="/lost-items" class="btn btn-secondary btn-sm" style="color: var(--text-faint);">Reset</a>
+  <% } %>
+</form>
+
+<!-- Items Grid -->
+<% if (items.length === 0) { %>
+  <div class="empty-state">
+    <div class="empty-state-icon">🔍</div>
+    <h3 class="empty-state-title">No lost items found</h3>
+    <p class="empty-state-text">
+      <% if (filters.search || filters.category || filters.status) { %>
+        No lost items matched your current filter criteria. Try clearing or relaxing your search terms.
+      <% } else { %>
+        No lost items have been reported yet. That's good news for campus!
+      <% } %>
+    </p>
+    <% if (filters.search || filters.category || filters.status) { %>
+      <a href="/lost-items" class="btn btn-secondary">Clear Filters</a>
+    <% } else { %>
+      <a href="/lost-items/new" class="btn btn-primary">Report First Lost Item</a>
+    <% } %>
+  </div>
+<% } else { %>
+  <div class="items-grid">
+    <% items.forEach(item => { %>
+      <div class="item-card">
+        <div class="item-card-header">
+          <span class="item-category-tag"><%= item.category %></span>
+          <span class="badge <%= item.status === 'Open' ? 'badge-open' : (item.status === 'Recovered' ? 'badge-recovered' : 'badge-closed') %>">
+            <%= item.status %>
+          </span>
+        </div>
+
+        <h3 class="item-title" style="margin-bottom: 0.5rem;">
+          <a href="/lost-items/<%= item._id %>"><%= item.itemName %></a>
+        </h3>
+
+        <p class="item-description"><%= item.description %></p>
+
+        <div class="item-meta">
+          <div class="meta-row">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+              <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+            <span>Last seen: <strong><%= item.lastSeenLocation %></strong></span>
+          </div>
+
+          <div class="meta-row">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <span>Lost on: <%= new Date(item.dateLost).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) %></span>
+          </div>
+
+          <div class="meta-row">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <span>Reported by: 
+              <% if (item.reportedBy) { %>
+                <a href="/students/<%= item.reportedBy._id %>"><%= item.reportedBy.fullName %></a>
+                <span style="font-size: 0.75rem; color: var(--text-faint);">(<%= item.reportedBy.department %>)</span>
+              <% } else { %>
+                <span style="color: var(--text-faint);">Student record unavailable</span>
+              <% } %>
+            </span>
+          </div>
+        </div>
+
+        <div class="item-footer">
+          <span class="code-badge">ID: <%= item._id.toString().slice(-6) %></span>
+          <a href="/lost-items/<%= item._id %>" class="btn btn-secondary btn-sm">View Details &rarr;</a>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+<% } %>
+
+<%- include('partials/footer') %>

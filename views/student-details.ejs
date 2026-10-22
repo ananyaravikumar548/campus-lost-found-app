@@ -1,0 +1,127 @@
+<%- include('partials/header') %>
+
+<div style="margin-bottom: 1.5rem;">
+  <a href="/students" class="btn btn-secondary btn-sm">&larr; Back to Student Directory</a>
+</div>
+
+<!-- Profile Card -->
+<div class="card" style="margin-bottom: 2.5rem; background: linear-gradient(135deg, rgba(30, 41, 59, 0.7), rgba(17, 24, 39, 0.85));">
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1.5rem; flex-wrap: wrap;">
+    <div style="display: flex; align-items: center; gap: 1.5rem;">
+      <div class="student-avatar" style="width: 72px; height: 72px; font-size: 2rem;">
+        <%= student.fullName.charAt(0).toUpperCase() %>
+      </div>
+      <div>
+        <h1 style="font-size: 1.85rem; font-weight: 800; margin-bottom: 0.25rem;"><%= student.fullName %></h1>
+        <p style="color: #a5b4fc; font-weight: 600;"><%= student.department %></p>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+      <a href="/lost-items/new?studentId=<%= student._id %>" class="btn btn-danger btn-sm">Report Lost as <%= student.fullName.split(' ')[0] %></a>
+      <a href="/found-items/new?studentId=<%= student._id %>" class="btn btn-success btn-sm">Report Found as <%= student.fullName.split(' ')[0] %></a>
+    </div>
+  </div>
+
+  <div class="detail-info-grid" style="margin-top: 1.5rem;">
+    <div class="info-item">
+      <span class="info-item-label">College Email</span>
+      <span class="info-item-value">
+        <a href="mailto:<%= student.email %>"><%= student.email %></a>
+      </span>
+    </div>
+
+    <div class="info-item">
+      <span class="info-item-label">Contact Number</span>
+      <span class="info-item-value">
+        <a href="tel:<%= student.contactNumber %>"><%= student.contactNumber %></a>
+      </span>
+    </div>
+
+    <div class="info-item">
+      <span class="info-item-label">Department</span>
+      <span class="info-item-value"><%= student.department %></span>
+    </div>
+
+    <div class="info-item">
+      <span class="info-item-label">MongoDB Object ID</span>
+      <span class="code-badge" style="word-break: break-all;"><%= student._id %></span>
+    </div>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 2rem;">
+  <!-- Lost Items Reported by this Student -->
+  <div>
+    <div class="page-header" style="margin-bottom: 1.25rem;">
+      <div>
+        <h2 style="font-size: 1.35rem; font-weight: 700;">Lost Items Reported (<%= lostItems.length %>)</h2>
+        <p class="page-subtitle">Belongings this student is searching for</p>
+      </div>
+    </div>
+
+    <% if (lostItems.length === 0) { %>
+      <div class="card" style="text-align: center; padding: 2rem 1.5rem;">
+        <div style="font-size: 1.8rem; margin-bottom: 0.5rem;">🎉</div>
+        <div style="font-weight: 600; margin-bottom: 0.25rem;">No lost items reported</div>
+        <p style="color: var(--text-muted); font-size: 0.85rem;">This student hasn't lost any items on campus.</p>
+      </div>
+    <% } else { %>
+      <div style="display: flex; flex-direction: column; gap: 1rem;">
+        <% lostItems.forEach(item => { %>
+          <div class="card card-interactive">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+              <a href="/lost-items/<%= item._id %>" style="font-size: 1.05rem; font-weight: 700; color: var(--text-main);">
+                <%= item.itemName %>
+              </a>
+              <span class="badge <%= item.status === 'Open' ? 'badge-open' : 'badge-recovered' %>"><%= item.status %></span>
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 0.75rem;"><%= item.description %></p>
+            <div style="font-size: 0.8rem; color: var(--text-faint); display: flex; justify-content: space-between;">
+              <span>📍 <%= item.lastSeenLocation %></span>
+              <span>📅 <%= new Date(item.dateLost).toLocaleDateString() %></span>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+  </div>
+
+  <!-- Found Items Reported by this Student -->
+  <div>
+    <div class="page-header" style="margin-bottom: 1.25rem;">
+      <div>
+        <h2 style="font-size: 1.35rem; font-weight: 700;">Found Items Registered (<%= foundItems.length %>)</h2>
+        <p class="page-subtitle">Belongings discovered and turned in by this student</p>
+      </div>
+    </div>
+
+    <% if (foundItems.length === 0) { %>
+      <div class="card" style="text-align: center; padding: 2rem 1.5rem;">
+        <div style="font-size: 1.8rem; margin-bottom: 0.5rem;">📦</div>
+        <div style="font-weight: 600; margin-bottom: 0.25rem;">No found items registered</div>
+        <p style="color: var(--text-muted); font-size: 0.85rem;">This student hasn't logged any found items yet.</p>
+      </div>
+    <% } else { %>
+      <div style="display: flex; flex-direction: column; gap: 1rem;">
+        <% foundItems.forEach(item => { %>
+          <div class="card card-interactive">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+              <a href="/found-items/<%= item._id %>" style="font-size: 1.05rem; font-weight: 700; color: var(--text-main);">
+                <%= item.itemName %>
+              </a>
+              <span class="badge <%= item.status === 'Available' ? 'badge-available' : (item.status === 'Claimed' ? 'badge-claimed' : 'badge-returned') %>"><%= item.status %></span>
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 0.75rem;"><%= item.description %></p>
+            <div style="font-size: 0.8rem; color: var(--text-faint); display: flex; justify-content: space-between;">
+              <span>📍 <%= item.foundLocation %></span>
+              <span>📅 <%= new Date(item.dateFound).toLocaleDateString() %></span>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

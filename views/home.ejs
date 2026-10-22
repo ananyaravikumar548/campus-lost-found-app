@@ -1,0 +1,132 @@
+<%- include('partials/header') %>
+
+<div class="hero">
+  <div class="hero-tag">🎓 College Campus Portal</div>
+  <h1 class="hero-title">Recover Lost Items.<br>Return Found Belongings.</h1>
+  <p class="hero-description">
+    A centralized, relationship-verified database system connecting students who lost belongings with those who found them across campus departments and libraries.
+  </p>
+  <div class="hero-actions">
+    <a href="/lost-items/new" class="btn btn-primary btn-lg">📢 Report a Lost Item</a>
+    <a href="/found-items/new" class="btn btn-success btn-lg">📦 Report a Found Item</a>
+    <a href="/students/new" class="btn btn-secondary btn-lg">👤 Register Student</a>
+  </div>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-icon lost">❓</div>
+    <div>
+      <div class="stat-value"><%= stats.lostCount %></div>
+      <div class="stat-label">Lost Items Reported</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon found">🎁</div>
+    <div>
+      <div class="stat-value"><%= stats.foundCount %></div>
+      <div class="stat-label">Found Items Logged</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon students">👥</div>
+    <div>
+      <div class="stat-value"><%= stats.studentCount %></div>
+      <div class="stat-label">Registered Students</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon claims">🤝</div>
+    <div>
+      <div class="stat-value"><%= stats.returnedCount %></div>
+      <div class="stat-label">Resolved / Returned</div>
+    </div>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2rem; margin-top: 1rem;">
+  <!-- Recent Lost Items -->
+  <div>
+    <div class="page-header" style="margin-bottom: 1.25rem;">
+      <div>
+        <h2 style="font-size: 1.35rem; font-weight: 700;">Recent Lost Items</h2>
+        <p class="page-subtitle">Help your fellow students locate their lost items</p>
+      </div>
+      <a href="/lost-items" class="btn btn-secondary btn-sm">View All &rarr;</a>
+    </div>
+
+    <% if (recentLostItems.length === 0) { %>
+      <div class="card" style="text-align: center; padding: 2.5rem 1.5rem;">
+        <div style="font-size: 2rem; margin-bottom: 0.5rem;">📂</div>
+        <div style="font-weight: 600; margin-bottom: 0.25rem;">No lost items reported yet</div>
+        <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1rem;">Everything seems in place on campus!</p>
+        <a href="/lost-items/new" class="btn btn-primary btn-sm">Report Lost Item</a>
+      </div>
+    <% } else { %>
+      <div style="display: flex; flex-direction: column; gap: 1rem;">
+        <% recentLostItems.forEach(item => { %>
+          <div class="card card-interactive">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+              <a href="/lost-items/<%= item._id %>" style="font-size: 1.05rem; font-weight: 700; color: var(--text-main);">
+                <%= item.itemName %>
+              </a>
+              <span class="badge <%= item.status === 'Open' ? 'badge-open' : 'badge-recovered' %>"><%= item.status %></span>
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 0.75rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+              <%= item.description %>
+            </p>
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: var(--text-faint); border-top: 1px solid var(--border-subtle); padding-top: 0.6rem;">
+              <span>📍 <%= item.lastSeenLocation %></span>
+              <span>Reported by: <a href="/students/<%= item.reportedBy ? item.reportedBy._id : '' %>"><%= item.reportedBy ? item.reportedBy.fullName : 'Unknown' %></a></span>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+  </div>
+
+  <!-- Recent Found Items -->
+  <div>
+    <div class="page-header" style="margin-bottom: 1.25rem;">
+      <div>
+        <h2 style="font-size: 1.35rem; font-weight: 700;">Recent Found Items</h2>
+        <p class="page-subtitle">Belongings discovered awaiting claim by rightful owners</p>
+      </div>
+      <a href="/found-items" class="btn btn-secondary btn-sm">View All &rarr;</a>
+    </div>
+
+    <% if (recentFoundItems.length === 0) { %>
+      <div class="card" style="text-align: center; padding: 2.5rem 1.5rem;">
+        <div style="font-size: 2rem; margin-bottom: 0.5rem;">📦</div>
+        <div style="font-weight: 600; margin-bottom: 0.25rem;">No found items logged yet</div>
+        <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1rem;">Found an item on campus? Log it to help return it.</p>
+        <a href="/found-items/new" class="btn btn-success btn-sm">Report Found Item</a>
+      </div>
+    <% } else { %>
+      <div style="display: flex; flex-direction: column; gap: 1rem;">
+        <% recentFoundItems.forEach(item => { %>
+          <div class="card card-interactive">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+              <a href="/found-items/<%= item._id %>" style="font-size: 1.05rem; font-weight: 700; color: var(--text-main);">
+                <%= item.itemName %>
+              </a>
+              <span class="badge <%= item.status === 'Available' ? 'badge-available' : (item.status === 'Claimed' ? 'badge-claimed' : 'badge-returned') %>"><%= item.status %></span>
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 0.75rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+              <%= item.description %>
+            </p>
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: var(--text-faint); border-top: 1px solid var(--border-subtle); padding-top: 0.6rem;">
+              <span>📍 <%= item.foundLocation %></span>
+              <span>Found by: <a href="/students/<%= item.reportedBy ? item.reportedBy._id : '' %>"><%= item.reportedBy ? item.reportedBy.fullName : 'Unknown' %></a></span>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

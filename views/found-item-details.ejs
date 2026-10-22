@@ -1,0 +1,136 @@
+<%- include('partials/header') %>
+
+<div style="margin-bottom: 1.5rem;">
+  <a href="/found-items" class="btn btn-secondary btn-sm">&larr; Back to Found Items</a>
+</div>
+
+<div class="detail-layout">
+  <div class="detail-main">
+    <div class="detail-header-card">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap;">
+        <div>
+          <span class="item-category-tag"><%= item.category %></span>
+          <h1 style="font-size: 2rem; font-weight: 800; margin: 0.5rem 0 0.25rem;"><%= item.itemName %></h1>
+          <p style="color: var(--text-faint); font-size: 0.85rem;">
+            Discovered and logged on <%= new Date(item.dateFound).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) %>
+          </p>
+        </div>
+        <span class="badge <%= item.status === 'Available' ? 'badge-available' : (item.status === 'Claimed' ? 'badge-claimed' : 'badge-returned') %>" style="font-size: 0.95rem; padding: 0.45rem 1rem;">
+          <%= item.status %>
+        </span>
+      </div>
+
+      <div class="detail-info-grid">
+        <div class="info-item">
+          <span class="info-item-label">Location Found</span>
+          <span class="info-item-value" style="color: #34d399;">📍 <%= item.foundLocation %></span>
+        </div>
+        <div class="info-item">
+          <span class="info-item-label">Date Logged</span>
+          <span class="info-item-value">📅 <%= new Date(item.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) %></span>
+        </div>
+        <div class="info-item">
+          <span class="info-item-label">Item Database ID</span>
+          <span class="code-badge"><%= item._id %></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.75rem;">Description & Distinct Features</h3>
+      <p style="color: var(--text-muted); line-height: 1.7; white-space: pre-line;"><%= item.description %></p>
+    </div>
+
+    <!-- Claim & Return Section (Phase 1 Foundation & Phase 2 Integration) -->
+    <div class="card" style="border-left: 4px solid var(--accent);">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem;">
+        <div>
+          <h3 style="font-size: 1.15rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem;">
+            <span>🤝</span> Claim & Ownership Verification
+          </h3>
+          <p style="color: var(--text-muted); font-size: 0.875rem; margin-top: 0.25rem;">
+            <%= item.status === 'Returned' ? 'This item has already been successfully returned to its rightful owner and is closed for claims.' : 'Does this belonging belong to you? Verify ownership with the finder.' %>
+          </p>
+        </div>
+      </div>
+
+      <% if (item.status === 'Returned') { %>
+        <div class="alert alert-success" style="margin-bottom: 0;">
+          <span>✓ Item has been returned to its owner. No further claims can be filed.</span>
+        </div>
+      <% } else { %>
+        <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 1.25rem; margin-bottom: 1.25rem;">
+          <h4 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.4rem; color: #a5b4fc;">How returning works:</h4>
+          <ol style="margin-left: 1.25rem; font-size: 0.875rem; color: var(--text-muted); line-height: 1.6;">
+            <li>Contact the student who logged this found item using their profile details.</li>
+            <li>Provide identifying proof (e.g., sticker descriptions, lock codes, contents, or purchase serial).</li>
+            <li>Once confirmed, the finder updates the status to <strong>Returned</strong>.</li>
+          </ol>
+        </div>
+      <% } %>
+
+      <!-- Item Status Management -->
+      <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-subtle);">
+        <h4 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.5rem;">Update Found Item Status</h4>
+        <form action="/found-items/<%= item._id %>/status?_method=PATCH" method="POST" style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+          <select name="status" class="form-control" style="max-width: 200px;">
+            <option value="Available" <%= item.status === 'Available' ? 'selected' : '' %>>Available</option>
+            <option value="Claimed" <%= item.status === 'Claimed' ? 'selected' : '' %>>Claimed</option>
+            <option value="Returned" <%= item.status === 'Returned' ? 'selected' : '' %>>Returned</option>
+          </select>
+          <button type="submit" class="btn btn-secondary">Update Status</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar: Finder Profile -->
+  <div class="detail-sidebar">
+    <div class="card">
+      <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+        <span>👤</span> Discovered By
+      </h3>
+
+      <% if (item.reportedBy) { %>
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem;">
+          <div class="student-avatar" style="background: linear-gradient(135deg, #10b981, #06b6d4);">
+            <%= item.reportedBy.fullName.charAt(0).toUpperCase() %>
+          </div>
+          <div>
+            <div style="font-weight: 700; font-size: 1.05rem;"><%= item.reportedBy.fullName %></div>
+            <div style="font-size: 0.85rem; color: var(--text-muted);"><%= item.reportedBy.department %></div>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.875rem; padding-top: 1rem; border-top: 1px solid var(--border-subtle);">
+          <div>
+            <span style="color: var(--text-faint); display: block; font-size: 0.75rem; text-transform: uppercase;">Email</span>
+            <a href="mailto:<%= item.reportedBy.email %>" style="color: var(--text-main);"><%= item.reportedBy.email %></a>
+          </div>
+
+          <div>
+            <span style="color: var(--text-faint); display: block; font-size: 0.75rem; text-transform: uppercase;">Contact Number</span>
+            <a href="tel:<%= item.reportedBy.contactNumber %>" style="color: var(--text-main);"><%= item.reportedBy.contactNumber %></a>
+          </div>
+
+          <div>
+            <span style="color: var(--text-faint); display: block; font-size: 0.75rem; text-transform: uppercase;">Student Database ID</span>
+            <span class="code-badge" style="word-break: break-all;"><%= item.reportedBy._id %></span>
+          </div>
+        </div>
+
+        <div style="margin-top: 1.5rem;">
+          <a href="/students/<%= item.reportedBy._id %>" class="btn btn-secondary btn-sm" style="width: 100%;">
+            View Full Student Profile &rarr;
+          </a>
+        </div>
+      <% } else { %>
+        <div style="color: var(--text-faint); font-size: 0.9rem;">
+          The reporting student profile could not be located in the database.
+        </div>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

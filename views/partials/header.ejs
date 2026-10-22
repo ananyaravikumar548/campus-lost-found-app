@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= typeof title !== 'undefined' ? title + ' | Campus Lost & Found' : 'Campus Lost & Found Management System' %></title>
+  <meta name="description" content="Campus Lost & Found Management System - report lost items, register found belongings, and connect campus owners.">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="/" class="brand">
+        <div class="brand-icon">🔍</div>
+        <span>Campus<span style="color: var(--primary);">Find</span></span>
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="/" class="nav-link <%= typeof activeTab !== 'undefined' && activeTab === 'home' ? 'active' : '' %>">Home</a></li>
+        <li><a href="/lost-items" class="nav-link <%= typeof activeTab !== 'undefined' && activeTab === 'lost' ? 'active' : '' %>">Lost Items</a></li>
+        <li><a href="/found-items" class="nav-link <%= typeof activeTab !== 'undefined' && activeTab === 'found' ? 'active' : '' %>">Found Items</a></li>
+        <li><a href="/students" class="nav-link <%= typeof activeTab !== 'undefined' && activeTab === 'students' ? 'active' : '' %>">Students</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <a href="/lost-items/new" class="btn btn-danger btn-sm">Report Lost</a>
+        <a href="/found-items/new" class="btn btn-success btn-sm">Report Found</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <% if (typeof successMessage !== 'undefined' && successMessage) { %>
+      <div class="alert alert-success">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+        </svg>
+        <span><%= successMessage %></span>
+      </div>
+    <% } %>
+
+    <% if (typeof errorMessage !== 'undefined' && errorMessage) { %>
+      <div class="alert alert-error">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+        </svg>
+        <span><%= errorMessage %></span>
+      </div>
+    <% } %>
