@@ -1,0 +1,122 @@
+<%- include('partials/header') %>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Claims Management Hub</h1>
+    <p class="page-subtitle">Track and review all ownership claims filed across campus found items</p>
+  </div>
+  <a href="/found-items" class="btn btn-secondary">
+    Browse Found Items &rarr;
+  </a>
+</div>
+
+<!-- Filters Bar -->
+<form action="/claims" method="GET" class="filter-bar">
+  <div class="search-input-wrapper">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="11" cy="11" r="8"></circle>
+      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+    </svg>
+    <input
+      type="text"
+      name="search"
+      class="form-control"
+      placeholder="Search by item name, reason, or claimant name..."
+      value="<%= filters.search || '' %>"
+    >
+  </div>
+
+  <div style="min-width: 170px;">
+    <select name="status" class="form-control" onchange="this.form.submit()">
+      <option value="">All Statuses</option>
+      <option value="Pending" <%= filters.status === 'Pending' ? 'selected' : '' %>>Pending Review</option>
+      <option value="Approved" <%= filters.status === 'Approved' ? 'selected' : '' %>>Approved</option>
+      <option value="Rejected" <%= filters.status === 'Rejected' ? 'selected' : '' %>>Rejected</option>
+    </select>
+  </div>
+
+  <button type="submit" class="btn btn-secondary">Filter</button>
+  <% if (filters.search || filters.status) { %>
+    <a href="/claims" class="btn btn-secondary btn-sm" style="color: var(--text-faint);">Reset</a>
+  <% } %>
+</form>
+
+<!-- Claims Listing -->
+<% if (claims.length === 0) { %>
+  <div class="empty-state">
+    <div class="empty-state-icon">📋</div>
+    <h3 class="empty-state-title">No claims found</h3>
+    <p class="empty-state-text">
+      <% if (filters.search || filters.status) { %>
+        No claims matched your current filter criteria.
+      <% } else { %>
+        No ownership claims have been submitted on campus yet. When a student files a claim on a found item, it will show up here.
+      <% } %>
+    </p>
+    <a href="/found-items" class="btn btn-primary">View Found Items</a>
+  </div>
+<% } else { %>
+  <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+    <% claims.forEach(claim => { %>
+      <div class="card card-interactive" style="border-left: 4px solid <%= claim.status === 'Approved' ? '#10b981' : (claim.status === 'Pending' ? '#f59e0b' : '#64748b') %>;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.75rem;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.35rem;">
+              <span class="badge <%= claim.status === 'Pending' ? 'badge-open' : (claim.status === 'Approved' ? 'badge-returned' : 'badge-closed') %>">
+                <%= claim.status %>
+              </span>
+              <span class="code-badge">Claim ID: <%= claim._id.toString().slice(-6) %></span>
+            </div>
+
+            <h3 style="font-size: 1.25rem; font-weight: 700; margin: 0.35rem 0;">
+              <% if (claim.foundItemId) { %>
+                <a href="/found-items/<%= claim.foundItemId._id %>" style="color: var(--text-main);">
+                  Item: <%= claim.foundItemId.itemName %>
+                </a>
+                <span class="item-category-tag" style="margin-left: 0.5rem;"><%= claim.foundItemId.category %></span>
+              <% } else { %>
+                <span style="color: var(--text-faint);">[Item Record Removed]</span>
+              <% } %>
+            </h3>
+          </div>
+
+          <div>
+            <% if (claim.foundItemId) { %>
+              <a href="/found-items/<%= claim.foundItemId._id %>" class="btn btn-secondary btn-sm">
+                Review on Item Page &rarr;
+              </a>
+            <% } %>
+          </div>
+        </div>
+
+        <!-- Reason -->
+        <div style="background: rgba(0, 0, 0, 0.25); border-radius: var(--radius-sm); padding: 0.85rem 1rem; margin-bottom: 1rem;">
+          <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-faint); font-weight: 700; display: block; margin-bottom: 0.25rem;">Proof / Reason</span>
+          <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.5;"><%= claim.reason %></p>
+        </div>
+
+        <!-- Metadata row -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; font-size: 0.85rem; color: var(--text-muted); border-top: 1px solid var(--border-subtle); padding-top: 0.75rem;">
+          <div>
+            Claimant: 
+            <% if (claim.claimedBy) { %>
+              <a href="/students/<%= claim.claimedBy._id %>"><strong><%= claim.claimedBy.fullName %></strong></a>
+              (<%= claim.claimedBy.department %> • <%= claim.claimedBy.email %>)
+            <% } else { %>
+              <span style="color: var(--text-faint);">Unknown</span>
+            <% } %>
+          </div>
+
+          <div>
+            <span>📅 Submitted: <%= new Date(claim.createdAt).toLocaleDateString() %></span>
+            <% if (claim.reviewedAt) { %>
+              <span style="margin-left: 1rem;">🕒 Reviewed: <%= new Date(claim.reviewedAt).toLocaleDateString() %></span>
+            <% } %>
+          </div>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+<% } %>
+
+<%- include('partials/footer') %>

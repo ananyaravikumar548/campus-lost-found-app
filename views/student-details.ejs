@@ -50,7 +50,8 @@
   </div>
 </div>
 
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 2rem;">
+<!-- Lost and Found Activity Grid -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 2rem; margin-bottom: 2.5rem;">
   <!-- Lost Items Reported by this Student -->
   <div>
     <div class="page-header" style="margin-bottom: 1.25rem;">
@@ -92,7 +93,7 @@
     <div class="page-header" style="margin-bottom: 1.25rem;">
       <div>
         <h2 style="font-size: 1.35rem; font-weight: 700;">Found Items Registered (<%= foundItems.length %>)</h2>
-        <p class="page-subtitle">Belongings discovered and turned in by this student</p>
+        <p class="page-subtitle">Belongings discovered and logged by this student</p>
       </div>
     </div>
 
@@ -116,6 +117,115 @@
             <div style="font-size: 0.8rem; color: var(--text-faint); display: flex; justify-content: space-between;">
               <span>📍 <%= item.foundLocation %></span>
               <span>📅 <%= new Date(item.dateFound).toLocaleDateString() %></span>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<!-- Phase 2 Claims Activity Grid -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 2rem;">
+  <!-- Claims Filed by Student -->
+  <div>
+    <div class="page-header" style="margin-bottom: 1.25rem;">
+      <div>
+        <h2 style="font-size: 1.35rem; font-weight: 700;">Ownership Claims Filed (<%= claimsFiled.length %>)</h2>
+        <p class="page-subtitle">Claims this student submitted to recover lost belongings</p>
+      </div>
+    </div>
+
+    <% if (claimsFiled.length === 0) { %>
+      <div class="card" style="text-align: center; padding: 2rem 1.5rem;">
+        <div style="font-size: 1.8rem; margin-bottom: 0.5rem;">📋</div>
+        <div style="font-weight: 600; margin-bottom: 0.25rem;">No claims submitted</div>
+        <p style="color: var(--text-muted); font-size: 0.85rem;">This student has not claimed any found items.</p>
+      </div>
+    <% } else { %>
+      <div style="display: flex; flex-direction: column; gap: 1rem;">
+        <% claimsFiled.forEach(claim => { %>
+          <div class="card card-interactive">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+              <div>
+                <% if (claim.foundItemId) { %>
+                  <a href="/found-items/<%= claim.foundItemId._id %>" style="font-size: 1.05rem; font-weight: 700; color: var(--text-main);">
+                    <%= claim.foundItemId.itemName %>
+                  </a>
+                <% } else { %>
+                  <span style="color: var(--text-faint);">Item Record Removed</span>
+                <% } %>
+              </div>
+              <span class="badge <%= claim.status === 'Pending' ? 'badge-open' : (claim.status === 'Approved' ? 'badge-returned' : 'badge-closed') %>">
+                <%= claim.status %>
+              </span>
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.5rem; line-height: 1.4;">
+              <strong>Proof:</strong> <%= claim.reason %>
+            </p>
+            <div style="font-size: 0.8rem; color: var(--text-faint); display: flex; justify-content: space-between; border-top: 1px solid var(--border-subtle); padding-top: 0.5rem;">
+              <span>📅 Claimed: <%= new Date(claim.createdAt).toLocaleDateString() %></span>
+              <% if (claim.foundItemId) { %>
+                <a href="/found-items/<%= claim.foundItemId._id %>" style="color: var(--primary);">View Item &rarr;</a>
+              <% } %>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+  </div>
+
+  <!-- Claims Received on Items Found by this Student -->
+  <div>
+    <div class="page-header" style="margin-bottom: 1.25rem;">
+      <div>
+        <h2 style="font-size: 1.35rem; font-weight: 700;">Claims Received as Finder (<%= claimsReceived.length %>)</h2>
+        <p class="page-subtitle">Claims from other students awaiting your verification</p>
+      </div>
+    </div>
+
+    <% if (claimsReceived.length === 0) { %>
+      <div class="card" style="text-align: center; padding: 2rem 1.5rem;">
+        <div style="font-size: 1.8rem; margin-bottom: 0.5rem;">📬</div>
+        <div style="font-weight: 600; margin-bottom: 0.25rem;">No claims received</div>
+        <p style="color: var(--text-muted); font-size: 0.85rem;">Nobody has submitted a claim for items logged by this student yet.</p>
+      </div>
+    <% } else { %>
+      <div style="display: flex; flex-direction: column; gap: 1rem;">
+        <% claimsReceived.forEach(claim => { %>
+          <div class="card card-interactive">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+              <div>
+                <% if (claim.foundItemId) { %>
+                  <a href="/found-items/<%= claim.foundItemId._id %>" style="font-size: 1.05rem; font-weight: 700; color: var(--text-main);">
+                    <%= claim.foundItemId.itemName %>
+                  </a>
+                <% } else { %>
+                  <span style="color: var(--text-faint);">Item Record Removed</span>
+                <% } %>
+              </div>
+              <span class="badge <%= claim.status === 'Pending' ? 'badge-open' : (claim.status === 'Approved' ? 'badge-returned' : 'badge-closed') %>">
+                <%= claim.status %>
+              </span>
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.5rem;">
+              <strong>Claimant:</strong> 
+              <% if (claim.claimedBy) { %>
+                <a href="/students/<%= claim.claimedBy._id %>"><%= claim.claimedBy.fullName %></a> (<%= claim.claimedBy.department %>)
+              <% } else { %>
+                Unknown
+              <% } %>
+            </p>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.5rem; line-height: 1.4;">
+              <strong>Reason:</strong> <%= claim.reason %>
+            </p>
+            <div style="font-size: 0.8rem; color: var(--text-faint); display: flex; justify-content: space-between; border-top: 1px solid var(--border-subtle); padding-top: 0.5rem;">
+              <span>📅 <%= new Date(claim.createdAt).toLocaleDateString() %></span>
+              <% if (claim.foundItemId) { %>
+                <a href="/found-items/<%= claim.foundItemId._id %>" class="btn btn-secondary btn-sm" style="padding: 0.2rem 0.6rem; font-size: 0.75rem;">
+                  Review & Approve &rarr;
+                </a>
+              <% } %>
             </div>
           </div>
         <% }) %>

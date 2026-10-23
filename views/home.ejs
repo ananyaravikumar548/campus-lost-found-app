@@ -9,6 +9,7 @@
   <div class="hero-actions">
     <a href="/lost-items/new" class="btn btn-primary btn-lg">📢 Report a Lost Item</a>
     <a href="/found-items/new" class="btn btn-success btn-lg">📦 Report a Found Item</a>
+    <a href="/claims" class="btn btn-secondary btn-lg">📋 Review Claims</a>
     <a href="/students/new" class="btn btn-secondary btn-lg">👤 Register Student</a>
   </div>
 </div>
@@ -31,15 +32,15 @@
   </div>
 
   <div class="stat-card">
-    <div class="stat-icon students">👥</div>
+    <div class="stat-icon claims">📋</div>
     <div>
-      <div class="stat-value"><%= stats.studentCount %></div>
-      <div class="stat-label">Registered Students</div>
+      <div class="stat-value"><%= stats.claimCount %></div>
+      <div class="stat-label">Claims Filed (<%= stats.pendingClaimCount %> Pending)</div>
     </div>
   </div>
 
   <div class="stat-card">
-    <div class="stat-icon claims">🤝</div>
+    <div class="stat-icon found">🤝</div>
     <div>
       <div class="stat-value"><%= stats.returnedCount %></div>
       <div class="stat-label">Resolved / Returned</div>

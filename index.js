@@ -11,7 +11,7 @@ const FoundItem = require('./models/FoundItem');
 const Claim = require('./models/Claim');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/campus_lost_found';
 
 // Common categories used across Lost & Found items
@@ -48,12 +48,14 @@ app.use((req, res, next) => {
 // ==========================================
 app.get('/', async (req, res, next) => {
   try {
-    const [lostCount, foundCount, studentCount, returnedCount, recentLostItems, recentFoundItems] =
+    const [lostCount, foundCount, studentCount, returnedCount, claimCount, pendingClaimCount, recentLostItems, recentFoundItems] =
       await Promise.all([
         LostItem.countDocuments(),
         FoundItem.countDocuments(),
         Student.countDocuments(),
         FoundItem.countDocuments({ status: 'Returned' }),
+        Claim.countDocuments(),
+        Claim.countDocuments({ status: 'Pending' }),
         LostItem.find().sort({ createdAt: -1 }).limit(4).populate('reportedBy'),
         FoundItem.find().sort({ createdAt: -1 }).limit(4).populate('reportedBy')
       ]);
@@ -61,7 +63,7 @@ app.get('/', async (req, res, next) => {
     res.render('home', {
       title: 'Dashboard',
       activeTab: 'home',
-      stats: { lostCount, foundCount, studentCount, returnedCount },
+      stats: { lostCount, foundCount, studentCount, returnedCount, claimCount, pendingClaimCount },
       recentLostItems,
       recentFoundItems
     });
@@ -201,7 +203,7 @@ app.post('/students', async (req, res, next) => {
   }
 });
 
-// GET /students/:id - Display dynamic student profile
+// GET /students/:id - Display dynamic student profile with items & claims
 app.get('/students/:id', async (req, res, next) => {
   const { id } = req.params;
 
@@ -227,18 +229,27 @@ app.get('/students/:id', async (req, res, next) => {
       });
     }
 
-    // Dynamic relationship queries: fetch items reported by this student
-    const [lostItems, foundItems] = await Promise.all([
+    // Dynamic relationship queries: fetch items and claims
+    const [lostItems, foundItems, claimsFiled] = await Promise.all([
       LostItem.find({ reportedBy: student._id }).sort({ createdAt: -1 }),
-      FoundItem.find({ reportedBy: student._id }).sort({ createdAt: -1 })
+      FoundItem.find({ reportedBy: student._id }).sort({ createdAt: -1 }),
+      Claim.find({ claimedBy: student._id }).populate('foundItemId').sort({ createdAt: -1 })
     ]);
+
+    const foundItemIds = foundItems.map(f => f._id);
+    const claimsReceived = await Claim.find({ foundItemId: { $in: foundItemIds } })
+      .populate('foundItemId')
+      .populate('claimedBy')
+      .sort({ createdAt: -1 });
 
     res.render('student-details', {
       title: `${student.fullName} - Profile`,
       activeTab: 'students',
       student,
       lostItems,
-      foundItems
+      foundItems,
+      claimsFiled,
+      claimsReceived
     });
   } catch (error) {
     next(error);
@@ -578,7 +589,7 @@ app.post('/found-items', async (req, res, next) => {
   }
 });
 
-// GET /found-items/:id - View one found item details & claim status
+// GET /found-items/:id - View one found item details, claims, and claim submission form
 app.get('/found-items/:id', async (req, res, next) => {
   const { id } = req.params;
 
@@ -592,7 +603,11 @@ app.get('/found-items/:id', async (req, res, next) => {
   }
 
   try {
-    const item = await FoundItem.findById(id).populate('reportedBy');
+    const [item, claims, students] = await Promise.all([
+      FoundItem.findById(id).populate('reportedBy'),
+      Claim.find({ foundItemId: id }).populate('claimedBy').sort({ createdAt: -1 }),
+      Student.find().sort({ fullName: 1 })
+    ]);
 
     if (!item) {
       return res.status(404).render('error', {
@@ -606,7 +621,9 @@ app.get('/found-items/:id', async (req, res, next) => {
     res.render('found-item-details', {
       title: `${item.itemName} - Found Item Details`,
       activeTab: 'found',
-      item
+      item,
+      claims,
+      students
     });
   } catch (error) {
     next(error);
@@ -660,7 +677,278 @@ app.patch('/found-items/:id/status', async (req, res, next) => {
 });
 
 // ==========================================
-// 5. 404 HANDLER & GLOBAL ERROR MIDDLEWARE
+// 5. PHASE 2: CLAIM ROUTES & BUSINESS RULES
+// ==========================================
+
+// POST /found-items/:id/claims - Submit a claim for a found item
+app.post('/found-items/:id/claims', async (req, res, next) => {
+  const { id } = req.params;
+  const { claimedBy, reason } = req.body;
+
+  // 1. Check valid MongoDB ID for found item
+  if (!mongoose.isValidObjectId(id)) {
+    return res.status(400).render('error', {
+      title: 'Invalid Item Identifier',
+      statusCode: 400,
+      activeTab: 'found',
+      message: `"${id}" is not a valid 24-character hexadecimal MongoDB ObjectId.`
+    });
+  }
+
+  try {
+    // 2. Relationship check: Found item must exist
+    const foundItem = await FoundItem.findById(id);
+    if (!foundItem) {
+      return res.status(404).render('error', {
+        title: 'Found Item Not Found',
+        statusCode: 404,
+        activeTab: 'found',
+        message: 'The item you are attempting to claim could not be found in the database.'
+      });
+    }
+
+    // 3. State check (Thinking Challenge 3): Cannot claim an already Returned item
+    if (foundItem.status === 'Returned') {
+      return res.status(400).render('error', {
+        title: 'Item Already Returned',
+        statusCode: 400,
+        activeTab: 'found',
+        message: 'This item has already been marked as Returned and cannot be claimed again.'
+      });
+    }
+
+    // 4. Validate claimant student ID and relationship
+    if (!claimedBy || !claimedBy.trim() || !mongoose.isValidObjectId(claimedBy)) {
+      return res.status(400).render('error', {
+        title: 'Invalid Claimant Student',
+        statusCode: 400,
+        activeTab: 'found',
+        message: 'Please select a valid registered student profile to submit this claim.'
+      });
+    }
+
+    const claimantStudent = await Student.findById(claimedBy);
+    if (!claimantStudent) {
+      return res.status(400).render('error', {
+        title: 'Student Not Found',
+        statusCode: 400,
+        activeTab: 'found',
+        message: 'The student record submitting this claim does not exist in the database.'
+      });
+    }
+
+    // 5. Finder self-claim rule: A student who found the item cannot claim it
+    if (foundItem.reportedBy && foundItem.reportedBy.toString() === claimantStudent._id.toString()) {
+      return res.status(400).render('error', {
+        title: 'Self-Claim Not Permitted',
+        statusCode: 400,
+        activeTab: 'found',
+        message: 'You cannot submit an ownership claim on an item you personally reported as found.'
+      });
+    }
+
+    // 6. Validate reason / proof of ownership
+    if (!reason || !reason.trim() || reason.trim().length < 10) {
+      return res.status(400).render('error', {
+        title: 'Insufficient Proof of Ownership',
+        statusCode: 400,
+        activeTab: 'found',
+        message: 'Please provide detailed proof of ownership (minimum 10 characters) explaining how this item belongs to you.'
+      });
+    }
+
+    // 7. Duplicate-claim check (Thinking Challenge 4):
+    // Prevent the same student submitting multiple claims for the same found item
+    const existingClaim = await Claim.findOne({
+      foundItemId: foundItem._id,
+      claimedBy: claimantStudent._id
+    });
+
+    if (existingClaim) {
+      return res.status(400).render('error', {
+        title: 'Duplicate Claim Detected',
+        statusCode: 400,
+        activeTab: 'found',
+        message: `You have already submitted a claim for this item (Status: ${existingClaim.status}). Duplicate claims by the same student are not permitted.`
+      });
+    }
+
+    // 8. Create new claim with status Pending
+    const newClaim = new Claim({
+      foundItemId: foundItem._id,
+      claimedBy: claimantStudent._id,
+      reason: reason.trim(),
+      status: 'Pending'
+    });
+
+    await newClaim.save();
+
+    // 9. Update item status to 'Claimed' if it was 'Available'
+    if (foundItem.status === 'Available') {
+      foundItem.status = 'Claimed';
+      await foundItem.save();
+    }
+
+    res.redirect(`/found-items/${foundItem._id}?success=${encodeURIComponent('Claim submitted successfully! The finder will review your ownership proof.')}`);
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(400).render('error', {
+        title: 'Duplicate Claim',
+        statusCode: 400,
+        activeTab: 'found',
+        message: 'A claim for this item by this student already exists in the database.'
+      });
+    }
+    next(error);
+  }
+});
+
+// PATCH /claims/:id/status - Approve or reject a claim (Enforces Ownership & Safe Update)
+app.patch('/claims/:id/status', async (req, res, next) => {
+  const { id } = req.params;
+  const { status, reviewerStudentId } = req.body;
+
+  // 1. Validate Claim ID
+  if (!mongoose.isValidObjectId(id)) {
+    return res.status(400).render('error', {
+      title: 'Invalid Claim Identifier',
+      statusCode: 400,
+      activeTab: 'found',
+      message: 'The supplied Claim ID is not a valid MongoDB ObjectId.'
+    });
+  }
+
+  // 2. Validate Target Status
+  const validStatuses = ['Approved', 'Rejected'];
+  if (!validStatuses.includes(status)) {
+    return res.status(400).render('error', {
+      title: 'Invalid Claim Status',
+      statusCode: 400,
+      activeTab: 'found',
+      message: `Status must be one of: ${validStatuses.join(', ')}.`
+    });
+  }
+
+  try {
+    // 3. Retrieve claim with populated foundItem and claimant
+    const claim = await Claim.findById(id).populate('foundItemId');
+    if (!claim) {
+      return res.status(404).render('error', {
+        title: 'Claim Not Found',
+        statusCode: 404,
+        activeTab: 'found',
+        message: `No claim found with ID "${id}".`
+      });
+    }
+
+    const foundItem = claim.foundItemId;
+    if (!foundItem) {
+      return res.status(404).render('error', {
+        title: 'Associated Item Missing',
+        statusCode: 404,
+        activeTab: 'found',
+        message: 'The found item associated with this claim no longer exists.'
+      });
+    }
+
+    // 4. Ownership Check (Thinking Challenge 1):
+    // Only the student who reported finding the item is authorized to approve/reject claims for it
+    if (!reviewerStudentId || !mongoose.isValidObjectId(reviewerStudentId) ||
+        foundItem.reportedBy.toString() !== reviewerStudentId.toString()) {
+      return res.status(403).render('error', {
+        title: 'Unauthorized Action',
+        statusCode: 403,
+        activeTab: 'found',
+        message: 'Permission denied: Only the student who reported finding this item is authorized to approve or reject claims for it. Verification failed on the server.'
+      });
+    }
+
+    // 5. State Check (Thinking Challenge 3):
+    // Once an item is marked Returned, further claim approvals must be rejected
+    if (foundItem.status === 'Returned' && status === 'Approved') {
+      return res.status(400).render('error', {
+        title: 'Item Already Returned',
+        statusCode: 400,
+        activeTab: 'found',
+        message: 'This item has already been marked as Returned and cannot be approved for another claim.'
+      });
+    }
+
+    // 6. Safe Update (Thinking Challenge 5):
+    // Use $set to update ONLY intended fields (status, reviewedAt) without touching reason or relations
+    const updatedClaim = await Claim.findByIdAndUpdate(
+      id,
+      { $set: { status, reviewedAt: new Date() } },
+      { new: true, runValidators: true }
+    );
+
+    // 7. Workflow Transition Logic
+    if (status === 'Approved') {
+      // Mark found item as Returned
+      await FoundItem.findByIdAndUpdate(foundItem._id, { $set: { status: 'Returned' } });
+
+      // Automatically reject any other pending claims for this item
+      await Claim.updateMany(
+        { foundItemId: foundItem._id, _id: { $ne: claim._id }, status: 'Pending' },
+        { $set: { status: 'Rejected', reviewedAt: new Date() } }
+      );
+    } else if (status === 'Rejected') {
+      // If rejected, check if there are remaining pending or approved claims
+      const remainingPendingOrApproved = await Claim.countDocuments({
+        foundItemId: foundItem._id,
+        status: { $in: ['Pending', 'Approved'] }
+      });
+
+      // If no other claims remain, return item status to 'Available'
+      if (remainingPendingOrApproved === 0 && foundItem.status !== 'Returned') {
+        await FoundItem.findByIdAndUpdate(foundItem._id, { $set: { status: 'Available' } });
+      }
+    }
+
+    res.redirect(`/found-items/${foundItem._id}?success=${encodeURIComponent(`Claim has been successfully marked as ${status}!`)}`);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /claims - Centralized Claims Hub with search & filters
+app.get('/claims', async (req, res, next) => {
+  try {
+    const { search, status } = req.query;
+    let query = {};
+
+    if (status && status.trim()) {
+      query.status = status.trim();
+    }
+
+    let claims = await Claim.find(query)
+      .populate('foundItemId')
+      .populate('claimedBy')
+      .sort({ createdAt: -1 });
+
+    if (search && search.trim()) {
+      const term = search.trim().toLowerCase();
+      claims = claims.filter(c => {
+        const itemMatch = c.foundItemId && c.foundItemId.itemName.toLowerCase().includes(term);
+        const reasonMatch = c.reason && c.reason.toLowerCase().includes(term);
+        const claimantMatch = c.claimedBy && c.claimedBy.fullName.toLowerCase().includes(term);
+        return itemMatch || reasonMatch || claimantMatch;
+      });
+    }
+
+    res.render('claims', {
+      title: 'Claims Management Hub',
+      activeTab: 'claims',
+      claims,
+      filters: { search, status }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ==========================================
+// 6. 404 HANDLER & GLOBAL ERROR MIDDLEWARE
 // ==========================================
 
 // 404 Catch-all handler

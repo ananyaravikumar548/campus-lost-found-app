@@ -7,7 +7,9 @@
     "start": "node index.js",
     "dev": "node --watch index.js",
     "seed": "node seed.js",
-    "test": "node test_phase1.js"
+    "test:phase1": "node test_phase1.js",
+    "test:phase2": "node test_phase2.js",
+    "test": "node test_phase1.js && node test_phase2.js"
   },
   "keywords": [
     "express",

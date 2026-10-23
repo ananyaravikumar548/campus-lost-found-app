@@ -91,7 +91,7 @@ async function seedDatabase() {
         description: 'True wireless earbuds in a white glossy charging case. Found on a chair after the afternoon workshop.',
         foundLocation: 'Main Auditorium, Row G Seat 14',
         dateFound: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-        status: 'Available',
+        status: 'Claimed', // One pending claim exists
         reportedBy: students[2]._id // Priya
       },
       {
@@ -109,20 +109,40 @@ async function seedDatabase() {
         description: 'Calculator in good condition with slide-on cover. Discovered on desk after semester midterm exams.',
         foundLocation: 'Seminar Hall B, Row 3 Desk 5',
         dateFound: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-        status: 'Returned',
+        status: 'Returned', // Successfully returned
         reportedBy: students[0]._id // Ananya
       }
     ]);
 
     console.log(`✓ Seeded ${foundItems.length} found item reports.`);
 
+    console.log('✓ Creating sample claims for Phase 2 workflow...');
+    const claims = await Claim.create([
+      {
+        foundItemId: foundItems[0]._id, // Earbuds
+        claimedBy: students[1]._id,     // Rohan claiming
+        reason: 'These are my Boat Airdopes 141 earbuds. The left earbud has a tiny nick on the plastic mesh and the case has an Apple sticker on the back.',
+        status: 'Pending'
+      },
+      {
+        foundItemId: foundItems[2]._id, // Calculator
+        claimedBy: students[2]._id,     // Priya
+        reason: 'My calculator has my roll number ME-2023-018 written in silver permanent marker on the inside of the slide-on battery compartment.',
+        status: 'Approved',
+        reviewedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
+      }
+    ]);
+
+    console.log(`✓ Seeded ${claims.length} claims (1 Pending, 1 Approved).`);
+
     console.log('\n==========================================');
-    console.log('🎉 SEEDING COMPLETE!');
+    console.log('🎉 PHASE 2 SEEDING COMPLETE!');
     console.log('==========================================');
     console.log(`Total Students:    ${students.length}`);
     console.log(`Total Lost Items:  ${lostItems.length}`);
     console.log(`Total Found Items: ${foundItems.length}`);
-    console.log('You can now run: npm start');
+    console.log(`Total Claims:      ${claims.length}`);
+    console.log('You can now run: npm start or npm run dev');
     console.log('==========================================\n');
 
     process.exit(0);

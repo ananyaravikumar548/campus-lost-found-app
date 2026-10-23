@@ -6,6 +6,7 @@
 
 <div class="detail-layout">
   <div class="detail-main">
+    <!-- Header Card -->
     <div class="detail-header-card">
       <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap;">
         <div>
@@ -36,51 +37,204 @@
       </div>
     </div>
 
+    <!-- Description -->
     <div class="card">
-      <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.75rem;">Description & Distinct Features</h3>
+      <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.75rem;">Description & Details</h3>
       <p style="color: var(--text-muted); line-height: 1.7; white-space: pre-line;"><%= item.description %></p>
     </div>
 
-    <!-- Claim & Return Section (Phase 1 Foundation & Phase 2 Integration) -->
+    <!-- Claims & Return Workflow Section (Phase 2 Core) -->
     <div class="card" style="border-left: 4px solid var(--accent);">
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.25rem;">
         <div>
-          <h3 style="font-size: 1.15rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem;">
-            <span>🤝</span> Claim & Ownership Verification
+          <h3 style="font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem;">
+            <span>🤝</span> Submitted Ownership Claims (<%= claims.length %>)
           </h3>
           <p style="color: var(--text-muted); font-size: 0.875rem; margin-top: 0.25rem;">
-            <%= item.status === 'Returned' ? 'This item has already been successfully returned to its rightful owner and is closed for claims.' : 'Does this belonging belong to you? Verify ownership with the finder.' %>
+            Review proof provided by students claiming this item. Only <strong><%= item.reportedBy ? item.reportedBy.fullName : 'the finder' %></strong> is authorized to approve or reject claims.
           </p>
         </div>
       </div>
 
-      <% if (item.status === 'Returned') { %>
-        <div class="alert alert-success" style="margin-bottom: 0;">
-          <span>✓ Item has been returned to its owner. No further claims can be filed.</span>
+      <!-- Claims List -->
+      <% if (claims.length === 0) { %>
+        <div style="text-align: center; padding: 2rem; background: rgba(255, 255, 255, 0.02); border: 1px dashed var(--border-subtle); border-radius: var(--radius-sm); margin-bottom: 1.5rem;">
+          <div style="font-size: 1.8rem; margin-bottom: 0.35rem;">📬</div>
+          <div style="font-weight: 600; margin-bottom: 0.25rem;">No claims submitted yet</div>
+          <p style="color: var(--text-muted); font-size: 0.85rem;">If this item belongs to you, submit your ownership proof below.</p>
         </div>
       <% } else { %>
-        <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 1.25rem; margin-bottom: 1.25rem;">
-          <h4 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.4rem; color: #a5b4fc;">How returning works:</h4>
-          <ol style="margin-left: 1.25rem; font-size: 0.875rem; color: var(--text-muted); line-height: 1.6;">
-            <li>Contact the student who logged this found item using their profile details.</li>
-            <li>Provide identifying proof (e.g., sticker descriptions, lock codes, contents, or purchase serial).</li>
-            <li>Once confirmed, the finder updates the status to <strong>Returned</strong>.</li>
-          </ol>
+        <div style="display: flex; flex-direction: column; gap: 1.25rem; margin-bottom: 1.75rem;">
+          <% claims.forEach(claim => { %>
+            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1.25rem;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.75rem;">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                  <div class="student-avatar" style="width: 38px; height: 38px; font-size: 1rem;">
+                    <%= claim.claimedBy ? claim.claimedBy.fullName.charAt(0).toUpperCase() : '?' %>
+                  </div>
+                  <div>
+                    <div style="font-weight: 700;">
+                      <% if (claim.claimedBy) { %>
+                        <a href="/students/<%= claim.claimedBy._id %>"><%= claim.claimedBy.fullName %></a>
+                        <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: normal;">(<%= claim.claimedBy.department %>)</span>
+                      <% } else { %>
+                        <span style="color: var(--text-faint);">Unknown Student</span>
+                      <% } %>
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--text-faint);">
+                      Submitted on <%= new Date(claim.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) %>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <span class="badge <%= claim.status === 'Pending' ? 'badge-open' : (claim.status === 'Approved' ? 'badge-returned' : 'badge-closed') %>">
+                    <%= claim.status %>
+                  </span>
+                </div>
+              </div>
+
+              <!-- Claim Reason / Proof -->
+              <div style="background: rgba(0, 0, 0, 0.25); border-left: 3px solid var(--primary); padding: 0.75rem 1rem; border-radius: 4px; margin-bottom: 1rem;">
+                <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-faint); font-weight: 700; display: block; margin-bottom: 0.25rem;">Proof of Ownership / Reason</span>
+                <p style="color: var(--text-main); font-size: 0.9rem; line-height: 1.5; white-space: pre-line;"><%= claim.reason %></p>
+              </div>
+
+              <!-- Claimant Contact Info -->
+              <% if (claim.claimedBy) { %>
+                <div style="display: flex; gap: 1.5rem; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem; flex-wrap: wrap;">
+                  <span>✉️ <a href="mailto:<%= claim.claimedBy.email %>"><%= claim.claimedBy.email %></a></span>
+                  <span>📞 <a href="tel:<%= claim.claimedBy.contactNumber %>"><%= claim.claimedBy.contactNumber %></a></span>
+                  <span><span class="code-badge">Claim ID: <%= claim._id.toString().slice(-6) %></span></span>
+                </div>
+              <% } %>
+
+              <!-- Review Action Form (Enforces Ownership Check in Backend) -->
+              <% if (claim.status === 'Pending' && item.status !== 'Returned') { %>
+                <div style="border-top: 1px solid var(--border-subtle); padding-top: 1rem; margin-top: 0.5rem; background: rgba(99, 102, 241, 0.04); padding: 1rem; border-radius: var(--radius-sm);">
+                  <div style="font-size: 0.85rem; font-weight: 700; color: #a5b4fc; margin-bottom: 0.6rem;">
+                    🔒 Reviewer Action (Finder Authorization Check)
+                  </div>
+
+                  <form action="/claims/<%= claim._id %>/status?_method=PATCH" method="POST" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                      <label style="font-size: 0.85rem; color: var(--text-muted); white-space: nowrap;">
+                        Acting Reviewer:
+                      </label>
+                      <select name="reviewerStudentId" class="form-control" style="max-width: 300px; padding: 0.45rem 0.85rem; font-size: 0.85rem;" required>
+                        <% if (item.reportedBy) { %>
+                          <option value="<%= item.reportedBy._id %>" selected>
+                            <%= item.reportedBy.fullName %> (Finder - Authorized)
+                          </option>
+                        <% } %>
+                        <% students.filter(s => !item.reportedBy || s._id.toString() !== item.reportedBy._id.toString()).forEach(s => { %>
+                          <option value="<%= s._id %>">
+                            <%= s.fullName %> (Other Student - Unauthorized Test)
+                          </option>
+                        <% }) %>
+                      </select>
+                    </div>
+
+                    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.25rem;">
+                      <button type="submit" name="status" value="Approved" class="btn btn-success btn-sm">
+                        ✓ Approve Claim (Marks Item Returned)
+                      </button>
+                      <button type="submit" name="status" value="Rejected" class="btn btn-danger btn-sm">
+                        ✗ Reject Claim
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              <% } else if (claim.status === 'Approved') { %>
+                <div style="font-size: 0.85rem; color: #34d399; font-weight: 600; padding: 0.5rem 0.75rem; background: var(--success-bg); border-radius: 4px;">
+                  ✓ This claim was approved. Item has been marked as Returned.
+                </div>
+              <% } else if (claim.status === 'Rejected') { %>
+                <div style="font-size: 0.85rem; color: #f87171; padding: 0.5rem 0.75rem; background: var(--danger-bg); border-radius: 4px;">
+                  ✗ This claim was rejected.
+                </div>
+              <% } %>
+            </div>
+          <% }) %>
         </div>
       <% } %>
 
-      <!-- Item Status Management -->
-      <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-subtle);">
-        <h4 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.5rem;">Update Found Item Status</h4>
-        <form action="/found-items/<%= item._id %>/status?_method=PATCH" method="POST" style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
-          <select name="status" class="form-control" style="max-width: 200px;">
-            <option value="Available" <%= item.status === 'Available' ? 'selected' : '' %>>Available</option>
-            <option value="Claimed" <%= item.status === 'Claimed' ? 'selected' : '' %>>Claimed</option>
-            <option value="Returned" <%= item.status === 'Returned' ? 'selected' : '' %>>Returned</option>
-          </select>
-          <button type="submit" class="btn btn-secondary">Update Status</button>
-        </form>
+      <!-- Submit a Claim Form -->
+      <div style="border-top: 2px solid var(--border-subtle); padding-top: 1.5rem; margin-top: 1.5rem;">
+        <h4 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.5rem;">
+          <span>📝</span> Claim This Found Item
+        </h4>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.25rem;">
+          Explain specific details, stickers, passwords, or contents only the true owner would know.
+        </p>
+
+        <% if (item.status === 'Returned') { %>
+          <div class="alert alert-success" style="margin-bottom: 0;">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+            </svg>
+            <div>
+              <strong>Item Returned & Closed for Claims</strong><br>
+              This found item has already been verified and returned to its rightful owner. New claims are disabled.
+            </div>
+          </div>
+        <% } else { %>
+          <form action="/found-items/<%= item._id %>/claims" method="POST" novalidate>
+            <div class="form-group">
+              <label class="form-label" for="claimedBy">
+                Claiming Student <span class="required">*</span>
+              </label>
+              <select name="claimedBy" id="claimedBy" class="form-control" required>
+                <option value="">-- Select Your Student Profile --</option>
+                <% students.forEach(student => { %>
+                  <option value="<%= student._id %>">
+                    <%= student.fullName %> (<%= student.department %> • <%= student.email %>)
+                  </option>
+                <% }) %>
+              </select>
+              <span class="form-hint">
+                You must have a registered student profile to submit a claim. Duplicate claims by the same student will be rejected.
+              </span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="reason">
+                Proof of Ownership / Reason <span class="required">*</span>
+              </label>
+              <textarea
+                name="reason"
+                id="reason"
+                class="form-control"
+                placeholder="Detail secret identifying features (e.g., wallpaper on screen, lock code pattern, contents inside pocket, purchase receipt, serial number)..."
+                required
+                minlength="10"
+              ></textarea>
+              <span class="form-hint">Minimum 10 characters. Provide convincing evidence so the finder can verify your ownership.</span>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+              <button type="submit" class="btn btn-primary">Submit Ownership Claim</button>
+            </div>
+          </form>
+        <% } %>
       </div>
+    </div>
+
+    <!-- Manual Status Management -->
+    <div class="card" style="border-color: var(--border-subtle); margin-top: 1.5rem;">
+      <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem;">Direct Status Control</h3>
+      <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.25rem;">
+        Manually adjust item status when needed.
+      </p>
+
+      <form action="/found-items/<%= item._id %>/status?_method=PATCH" method="POST" style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+        <select name="status" class="form-control" style="max-width: 200px;">
+          <option value="Available" <%= item.status === 'Available' ? 'selected' : '' %>>Available</option>
+          <option value="Claimed" <%= item.status === 'Claimed' ? 'selected' : '' %>>Claimed</option>
+          <option value="Returned" <%= item.status === 'Returned' ? 'selected' : '' %>>Returned</option>
+        </select>
+        <button type="submit" class="btn btn-secondary">Update Status</button>
+      </form>
     </div>
   </div>
 
